@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="description" content="Slay the Spire 2 のキャラクター別勝率を計算して、戦績画像を友達に共有できる無料ツール。">
+<meta property="og:title" content="Slay the Spire 2 — 勝率トラッカー">
+<meta property="og:description" content="キャラ別の勝敗を入力して、戦績を画像で共有しよう。">
+<meta property="og:type" content="website">
+<title>Slay the Spire 2 — 勝率トラッカー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #2a2a3a;
+    --gold: #c8a84b;
+    --gold-light: #e8c96a;
+    --text: #d8d0c0;
+    --muted: #6a6070;
+    --iron: #7a9bb5;
+    --silent: #5a9a6a;
+    --defect: #4a7aaa;
+    --watcher: #9a6aaa;
+    --necro: #8a4a5a;
+    --fool: #e8c93a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 32px 16px;
+    background-image:
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(200,168,75,0.07) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px);
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(14px, 3vw, 22px);
+    color: var(--gold);
+    text-align: center;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    text-shadow: 0 0 30px rgba(200,168,75,0.4);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 20px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--char-color);
+    opacity: 0.8;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: var(--char-color);
+  }
+
+  .char-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    color: var(--char-color);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .char-subtitle {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 14px;
+    flex: 1;
+    min-width: 100px;
+    cursor: text;
+  }
+  .input-group:focus-within {
+    border-color: var(--char-color);
+    background: rgba(255,255,255,0.07);
+  }
+  .input-group label {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .input-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 22px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+    min-height: 36px;
+    padding: 0;
+  }
+  .input-group input::placeholder { color: var(--border); }
+  .sep {
+    font-size: 18px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .result-area {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .winrate-display {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .winrate-num {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 36px;
+    color: var(--char-color);
+    line-height: 1;
+    text-shadow: 0 0 20px var(--char-color);
+    transition: all 0.3s;
+  }
+  .winrate-pct { font-size: 16px; color: var(--muted); }
+  .total-games {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .bar-track {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--char-color);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 8px var(--char-color);
+  }
+
+  .no-data {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .summary {
+    max-width: 1100px;
+    margin: 0 auto 28px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-top: 3px solid var(--gold);
+  }
+  .summary-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .summary-stats {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+  .summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .summary-num {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px;
+    line-height: 1;
+    text-shadow: 0 0 16px currentColor;
+  }
+  .summary-num.wins  { color: #6abf7a; }
+  .summary-num.losses { color: #bf6a6a; }
+  .summary-num.total  { color: var(--gold); }
+  .summary-stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    margin-top: 3px;
+  }
+  .summary-winrate {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .summary-winrate span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .summary-bar-wrap { flex: 1; min-width: 120px; }
+  .summary-bar-track {
+    height: 5px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .summary-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #e8c96a);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 8px rgba(200,168,75,0.5);
+  }
+
+  .export-wrap {
+    text-align: center;
+    margin: 32px auto 8px;
+    max-width: 1100px;
+  }
+  .export-btn {
+    background: linear-gradient(135deg, rgba(200,168,75,0.15), rgba(200,168,75,0.05));
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    padding: 14px 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .export-btn:hover {
+    background: linear-gradient(135deg, rgba(200,168,75,0.28), rgba(200,168,75,0.12));
+    box-shadow: 0 0 18px rgba(200,168,75,0.25);
+  }
+  .export-btn:active { opacity: 0.7; }
+  .export-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* image preview modal */
+  .img-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 1000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    gap: 18px;
+  }
+  .img-modal.open { display: flex; }
+  .img-modal img {
+    max-width: 100%;
+    max-height: 65vh;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  }
+  .img-modal-hint {
+    color: var(--gold);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+  .img-modal-hint span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 5px;
+    letter-spacing: 0.05em;
+  }
+  .img-modal-close {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    padding: 12px 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+  }
+
+  /* snapshot overlay — hides inputs, shows static values */
+  body.snapping .inputs { display: none; }
+  body.snapping .snap-row { display: flex !important; }
+
+  .snap-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .snap-row .snap-val {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 15px;
+  }
+
+  /* character colors */
+  [data-char="ironclad"] { --char-color: var(--iron); }
+  [data-char="silent"]   { --char-color: var(--silent); }
+  [data-char="watcher"]  { --char-color: var(--watcher); }
+  [data-char="necro"]    { --char-color: var(--necro); }
+  [data-char="defect"]   { --char-color: var(--defect); }
+  [data-char="fool"]     { --char-color: var(--fool); }
+</style>
+</head>
+<body>
+
+<h1>Slay the Spire 2</h1>
+<p class="subtitle">Win Rate Tracker</p>
+
+<div class="summary" id="summary">
+  <div>
+    <div class="summary-label">Total</div>
+    <div class="summary-stats">
+      <div class="summary-stat">
+        <div class="summary-num wins" id="sum-w">0</div>
+        <div class="summary-stat-label">勝</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-num losses" id="sum-l">0</div>
+        <div class="summary-stat-label">敗</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-num total" id="sum-t">0</div>
+        <div class="summary-stat-label">総挑戦</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="summary-label">勝率</div>
+    <div class="summary-winrate" id="sum-pct">— <span>%</span></div>
+    <div class="summary-bar-track">
+      <div class="summary-bar-fill" id="sum-bar"></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="export-wrap">
+  <button class="export-btn" id="exportBtn">📷 画像として保存</button>
+</div>
+
+<div class="img-modal" id="imgModal">
+  <div class="img-modal-hint">
+    画像を長押し → 「写真に保存」
+    <span>保存できたら閉じるボタンを押してください</span>
+  </div>
+  <img id="previewImg" src="" alt="preview">
+  <button class="img-modal-close" id="modalClose">閉じる</button>
+</div>
+
+<script>
+const chars = [
+  { id: 'ironclad', name: 'Ironclad',     sub: 'アイアンクラッド' },
+  { id: 'silent',   name: 'Silent',       sub: 'サイレント'       },
+  { id: 'watcher',  name: 'Regent',       sub: 'リージェント'     },
+  { id: 'necro',    name: 'Necrobinder',  sub: 'ネクロバインダー'  },
+  { id: 'defect',   name: 'Defect',       sub: 'ディフェクト'     },
+  { id: 'fool',     name: 'Fool',         sub: 'フール'           },
+];
+
+const grid = document.getElementById('grid');
+
+chars.forEach(c => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.char = c.id;
+  card.innerHTML = `
+    <div class="char-name">${c.name}</div>
+    <div class="char-subtitle">${c.sub}</div>
+    <div class="inputs">
+      <div class="input-group">
+        <label>勝</label>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" min="0" placeholder="0" class="wins" id="${c.id}-w">
+      </div>
+      <span class="sep">—</span>
+      <div class="input-group">
+        <label>敗</label>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" min="0" placeholder="0" class="losses" id="${c.id}-l">
+      </div>
+    </div>
+    <div class="snap-row" id="${c.id}-snap">
+      <span class="snap-val" id="${c.id}-snap-val"></span>
+    </div>
+    <div class="result-area">
+      <div class="no-data" id="${c.id}-empty">数字を入力してください</div>
+      <div id="${c.id}-result" style="display:none">
+        <div class="winrate-display">
+          <div class="winrate-num" id="${c.id}-pct">—</div>
+          <div class="winrate-pct">%</div>
+        </div>
+        <div class="total-games" id="${c.id}-total"></div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" id="${c.id}-bar"></div>
+      </div>
+    </div>
+  `;
+  grid.appendChild(card);
+
+  const wInput = card.querySelector('.wins');
+  const lInput = card.querySelector('.losses');
+
+  function update() {
+    const w = parseInt(wInput.value) || 0;
+    const l = parseInt(lInput.value) || 0;
+    const total = w + l;
+    const empty = document.getElementById(`${c.id}-empty`);
+    const result = document.getElementById(`${c.id}-result`);
+    const pctEl = document.getElementById(`${c.id}-pct`);
+    const totalEl = document.getElementById(`${c.id}-total`);
+    const bar = document.getElementById(`${c.id}-bar`);
+
+    if (total === 0) {
+      empty.style.display = '';
+      result.style.display = 'none';
+      bar.style.width = '0%';
+      const snapVal = document.getElementById(`${c.id}-snap-val`);
+      if (snapVal) snapVal.textContent = '0勝 0敗 ／ 0戦';
+      return;
+    }
+    const pct = (w / total * 100);
+    empty.style.display = 'none';
+    result.style.display = '';
+    pctEl.textContent = pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1);
+    totalEl.textContent = `${w}勝 ${l}敗 ／ ${total}戦`;
+    bar.style.width = pct + '%';
+
+    // snap row
+    const snapVal = document.getElementById(`${c.id}-snap-val`);
+    if (snapVal) snapVal.textContent = `${w}勝 ${l}敗 ／ ${total}戦`;
+  }
+
+  [wInput, lInput].forEach(inp => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/[^0-9]/g, '');
+      update(); updateSummary();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const all = Array.from(document.querySelectorAll('#grid input'));
+      const next = all[all.indexOf(inp) + 1];
+      if (next) { next.focus(); next.select(); } else { inp.blur(); }
+    });
+  });
+});
+
+function updateSummary() {
+  let totalW = 0, totalL = 0;
+  chars.forEach(c => {
+    totalW += parseInt(document.getElementById(`${c.id}-w`).value) || 0;
+    totalL += parseInt(document.getElementById(`${c.id}-l`).value) || 0;
+  });
+  const totalGames = totalW + totalL;
+  document.getElementById('sum-w').textContent = totalW;
+  document.getElementById('sum-l').textContent = totalL;
+  document.getElementById('sum-t').textContent = totalGames;
+  if (totalGames === 0) {
+    document.getElementById('sum-pct').innerHTML = '— <span>%</span>';
+    document.getElementById('sum-bar').style.width = '0%';
+  } else {
+    const pct = totalW / totalGames * 100;
+    document.getElementById('sum-pct').innerHTML = `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)} <span>%</span>`;
+    document.getElementById('sum-bar').style.width = pct + '%';
+  }
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+document.getElementById('exportBtn').addEventListener('click', async function() {
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+
+  document.body.classList.add('snapping');
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  try {
+    const canvas = await html2canvas(document.body, {
+      backgroundColor: '#0a0a0f',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      ignoreElements: el => el.id === 'imgModal' || el.id === 'exportBtn' || el.classList.contains('export-wrap'),
+    });
+
+    document.body.classList.remove('snapping');
+
+    const dataUrl = canvas.toDataURL('image/png');
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('imgModal').classList.add('open');
+  } catch(e) {
+    document.body.classList.remove('snapping');
+    alert('画像の生成に失敗しました');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📷 画像として保存';
+});
+
+document.getElementById('modalClose').addEventListener('click', function() {
+  document.getElementById('imgModal').classList.remove('open');
+});
+</script>
+</body>
+</html>
