@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="勝率トラッカー">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <meta name="description" content="Slay the Spire 2 のキャラクター別勝率を計算して、戦績画像を友達に共有できる無料ツール。">
 <meta property="og:title" content="Slay the Spire 2 — 勝率トラッカー">
 <meta property="og:description" content="勝敗を入力するだけで勝率を自動計算。戦績を記録・画像で共有できる無料の非公式ファンツール。">
@@ -328,6 +334,49 @@
   }
   .reset-btn:hover { color: #bf6a6a; border-color: #bf6a6a; }
   .reset-btn:active { opacity: 0.7; }
+  .install-guide {
+    max-width: 760px;
+    margin: 28px auto 14px;
+    border: 1px solid rgba(200,168,75,0.35);
+    border-radius: 12px;
+    background: rgba(18,18,26,0.9);
+    overflow: hidden;
+    scroll-margin-top: 18px;
+  }
+  .install-guide summary {
+    padding: 17px 20px;
+    color: var(--gold-light);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style-position: inside;
+  }
+  .install-guide summary span {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+  .install-guide[open] summary { border-bottom: 1px solid var(--border); }
+  .install-guide-body { padding: 18px 20px 20px; }
+  .install-guide-body p {
+    font-size: 12px;
+    line-height: 1.8;
+    margin: 0 0 12px;
+  }
+  .install-guide-body ol { margin: 14px 0 18px; padding-left: 24px; }
+  .install-guide-body li { margin-bottom: 10px; line-height: 1.7; font-size: 13px; }
+  .install-guide-body strong { color: var(--gold-light); }
+  .install-hint {
+    background: rgba(200,168,75,0.07);
+    border-left: 3px solid var(--gold);
+    padding: 12px 14px;
+    border-radius: 4px;
+  }
+  .install-caution { color: #9b92a4; font-size: 11px !important; }
+  .install-guide-body a { color: var(--gold-light); }
+  @media (display-mode: standalone) { .install-guide { display: none; } }
+  body.snapping .install-guide { display: none !important; }
   .confirm-btns { display: flex; gap: 12px; }
   .img-modal-close.danger { color: #e08a8a; border-color: #bf6a6a; }
 
@@ -460,6 +509,20 @@
   <button class="export-btn" id="exportBtn">📷 画像として保存</button>
   <button class="reset-btn" id="resetBtn">記録をリセット</button>
 </div>
+<details class="install-guide" id="install">
+  <summary>📱 ホーム画面に追加してアプリ感覚で使う <span>無料・約30秒</span></summary>
+  <div class="install-guide-body">
+    <p class="install-hint">Threads・LINEなどから開いた場合は、まずメニューの<strong>「Safariで開く」</strong>を選んでね。「ホーム画面に追加」が見当たらないときもSafariで開き直そう。</p>
+    <ol>
+      <li>iPhoneの<strong>Safari</strong>でこの勝率トラッカーを開く。</li>
+      <li>Safariの<strong>共有ボタン「□↑」</strong>（四角から上向き矢印）をタップ。</li>
+      <li>メニューを下にスクロールして<strong>「ホーム画面に追加」</strong>を選ぶ。</li>
+      <li><strong>「Webアプリとして開く」</strong>をオンにし、右上の<strong>「追加」</strong>をタップ。これで完了！</li>
+    </ol>
+    <p>AndroidならChromeの<strong>「︙」→「ホーム画面に追加」</strong>から追加できるよ。</p>
+    <p class="install-caution">※勝敗の記録は端末内に保存されます。Safari版とホーム画面版で記録が共有されない場合があるため、記録済みの人は追加後に確認してください。</p>
+  </div>
+</details>
 <div class="share-credit" aria-hidden="true">この戦績カードを作る：<span>pocoapoco-lab.github.io/sts2-winrate/</span></div>
 
 <div class="img-modal" id="imgModal">
@@ -686,6 +749,22 @@ document.getElementById('resetOk').addEventListener('click', () => {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+if (location.hash === '#install') {
+  const guide = document.getElementById('install');
+  guide.open = true;
+  requestAnimationFrame(() => guide.scrollIntoView({block: 'start'}));
+}
+window.addEventListener('hashchange', () => {
+  if (location.hash !== '#install') return;
+  const guide = document.getElementById('install');
+  guide.open = true;
+  guide.scrollIntoView({block: 'start', behavior: 'smooth'});
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 document.getElementById('exportBtn').addEventListener('click', async function() {
   const btn = this;
   btn.disabled = true;
@@ -700,7 +779,7 @@ document.getElementById('exportBtn').addEventListener('click', async function() 
       scale: 2,
       useCORS: true,
       logging: false,
-      ignoreElements: el => el.id === 'imgModal' || el.id === 'resetModal' || el.id === 'exportBtn' || el.classList.contains('export-wrap'),
+      ignoreElements: el => el.id === 'imgModal' || el.id === 'resetModal' || el.id === 'exportBtn' || el.classList.contains('export-wrap') || el.classList.contains('install-guide'),
     });
 
     document.body.classList.remove('snapping');

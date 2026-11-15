@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Slay the Spire 2 勝率トラッカー",
+  "short_name": "勝率トラッカー",
+  "description": "Slay the Spire 2のキャラクター別勝敗を記録して勝率を自動計算できる、無料の非公式ファンツール。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="20%" r="85%">
+      <stop offset="0" stop-color="#29202b"/>
+      <stop offset=".68" stop-color="#111019"/>
+      <stop offset="1" stop-color="#08080d"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffeca3"/>
+      <stop offset=".5" stop-color="#d9b457"/>
+      <stop offset="1" stop-color="#99733a"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <rect x="24" y="24" width="464" height="464" rx="78" fill="none" stroke="#947339" stroke-width="5" opacity=".8"/>
+  <path d="M130 145H382" stroke="#c8a84b" opacity=".35" stroke-width="2"/>
+  <text x="256" y="119" text-anchor="middle" fill="#d4bd75" font-size="40" font-family="serif" letter-spacing="12">STS 2</text>
+  <text x="256" y="310" text-anchor="middle" font-family="DejaVu Serif,serif" font-size="172" font-weight="bold" fill="#caa64f" opacity=".4" filter="url(#glow)">WR</text>
+  <text x="256" y="310" text-anchor="middle" font-family="DejaVu Serif,serif" font-size="172" font-weight="bold" fill="url(#gold)">WR</text>
+  <text x="256" y="353" text-anchor="middle" font-family="serif" font-size="29" fill="#d5bd81" letter-spacing="9">TRACKER</text>
+  <rect x="84" y="399" width="50" height="13" rx="6" fill="#7a9bb5"/>
+  <rect x="143" y="399" width="50" height="13" rx="6" fill="#5a9a6a"/>
+  <rect x="202" y="399" width="50" height="13" rx="6" fill="#9a6aaa"/>
+  <rect x="261" y="399" width="50" height="13" rx="6" fill="#8a4a5a"/>
+  <rect x="320" y="399" width="50" height="13" rx="6" fill="#4a7aaa"/>
+  <rect x="379" y="399" width="50" height="13" rx="6" fill="#e8c93a"/>
+  <path d="M130 450H382" stroke="#c8a84b" opacity=".35" stroke-width="2"/>
+</svg>
