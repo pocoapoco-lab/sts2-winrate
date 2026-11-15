@@ -350,6 +350,23 @@
   /* snapshot overlay — hides inputs, shows static values */
   body.snapping .inputs { display: none; }
   body.snapping .snap-row { display: flex !important; }
+  /* Visible only in downloaded battle-record images. */
+  .share-credit {
+    display: none;
+    max-width: 1100px;
+    margin: 22px auto 0;
+    padding-top: 14px;
+    border-top: 1px solid rgba(200,168,75,0.18);
+    color: #8c8290;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
+  }
+  body.snapping .share-credit { display: block; }
+  .share-credit span { color: var(--gold); }
+
 
   .snap-row {
     display: none;
@@ -413,6 +430,7 @@
 <div class="export-wrap">
   <button class="export-btn" id="exportBtn">📷 画像として保存</button>
 </div>
+<div class="share-credit" aria-hidden="true">この戦績カードを作る：<span>rafaeldestiny0108-art.github.io/sts2-winrate/</span></div>
 
 <div class="img-modal" id="imgModal">
   <div class="img-modal-hint">
