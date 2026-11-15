@@ -302,6 +302,23 @@
   .export-btn:active { opacity: 0.7; }
   .export-btn:disabled { opacity: 0.4; cursor: default; }
 
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-left: 12px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .reset-btn:hover { color: #bf6a6a; border-color: #bf6a6a; }
+  .reset-btn:active { opacity: 0.7; }
+  .confirm-btns { display: flex; gap: 12px; }
+  .img-modal-close.danger { color: #e08a8a; border-color: #bf6a6a; }
+
   /* image preview modal */
   .img-modal {
     display: none;
@@ -429,6 +446,7 @@
 <div class="grid" id="grid"></div>
 <div class="export-wrap">
   <button class="export-btn" id="exportBtn">📷 画像として保存</button>
+  <button class="reset-btn" id="resetBtn">記録をリセット</button>
 </div>
 <div class="share-credit" aria-hidden="true">この戦績カードを作る：<span>pocoapoco-lab.github.io/sts2-winrate/</span></div>
 
@@ -439,6 +457,17 @@
   </div>
   <img id="previewImg" src="" alt="preview">
   <button class="img-modal-close" id="modalClose">閉じる</button>
+</div>
+
+<div class="img-modal" id="resetModal" role="dialog" aria-modal="true">
+  <div class="img-modal-hint">
+    全キャラクターの記録をリセットしますか？
+    <span>この操作は元に戻せません</span>
+  </div>
+  <div class="confirm-btns">
+    <button class="img-modal-close" id="resetCancel">キャンセル</button>
+    <button class="img-modal-close danger" id="resetOk">リセットする</button>
+  </div>
 </div>
 
 <script>
@@ -453,6 +482,53 @@ const chars = [
 
 const grid = document.getElementById('grid');
 
+// ---- Ver.1.1: 入力値の検証 & 保存 ----
+const MAX_COUNT = 9999;               // 1キャラ・勝/敗それぞれの上限
+const STORAGE_KEY = 'sts2-winrate:data';
+const STORAGE_VERSION = 1;
+const updaters = [];
+
+// 全角数字→半角、数字以外を除去、上限で丸める。空欄は0。
+function sanitizeDigits(str) {
+  return String(str == null ? '' : str)
+    .replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0))
+    .replace(/[^0-9]/g, '');
+}
+function toCount(v) {
+  const n = parseInt(sanitizeDigits(v), 10);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, MAX_COUNT);
+}
+function readCount(id) {
+  return toCount(document.getElementById(id).value);
+}
+function formatPct(pct) {
+  if (!Number.isFinite(pct)) return '0';
+  pct = Math.min(100, Math.max(0, pct));
+  return pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1);
+}
+
+function saveData() {
+  try {
+    const data = {};
+    chars.forEach(c => { data[c.id] = { w: readCount(`${c.id}-w`), l: readCount(`${c.id}-l`) }; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: STORAGE_VERSION, data }));
+  } catch (e) { /* 保存不可の環境でもアプリは動作させる */ }
+}
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object' || obj.version !== STORAGE_VERSION) return null;
+    if (!obj.data || typeof obj.data !== 'object') return null;
+    return obj.data;
+  } catch (e) { return null; }
+}
+function clearData() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
 chars.forEach(c => {
   const card = document.createElement('div');
   card.className = 'card';
@@ -463,12 +539,12 @@ chars.forEach(c => {
     <div class="inputs">
       <div class="input-group">
         <label>勝</label>
-        <input type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" min="0" placeholder="0" class="wins" id="${c.id}-w">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="4" min="0" placeholder="0" class="wins" id="${c.id}-w">
       </div>
       <span class="sep">—</span>
       <div class="input-group">
         <label>敗</label>
-        <input type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" min="0" placeholder="0" class="losses" id="${c.id}-l">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" maxlength="4" min="0" placeholder="0" class="losses" id="${c.id}-l">
       </div>
     </div>
     <div class="snap-row" id="${c.id}-snap">
@@ -494,8 +570,8 @@ chars.forEach(c => {
   const lInput = card.querySelector('.losses');
 
   function update() {
-    const w = parseInt(wInput.value) || 0;
-    const l = parseInt(lInput.value) || 0;
+    const w = toCount(wInput.value);
+    const l = toCount(lInput.value);
     const total = w + l;
     const empty = document.getElementById(`${c.id}-empty`);
     const result = document.getElementById(`${c.id}-result`);
@@ -514,9 +590,9 @@ chars.forEach(c => {
     const pct = (w / total * 100);
     empty.style.display = 'none';
     result.style.display = '';
-    pctEl.textContent = pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1);
+    pctEl.textContent = formatPct(pct);
     totalEl.textContent = `${w}勝 ${l}敗 ／ ${total}戦`;
-    bar.style.width = pct + '%';
+    bar.style.width = (Number.isFinite(pct) ? pct : 0) + '%';
 
     // snap row
     const snapVal = document.getElementById(`${c.id}-snap-val`);
@@ -524,10 +600,14 @@ chars.forEach(c => {
   }
 
   [wInput, lInput].forEach(inp => {
-    inp.addEventListener('input', () => {
-      inp.value = inp.value.replace(/[^0-9]/g, '');
-      update(); updateSummary();
+    inp.addEventListener('input', e => {
+      // 変換中(IME)は触らない。確定後に数字のみ・上限内へ正規化
+      if (e.isComposing) return;
+      const digits = sanitizeDigits(inp.value);
+      inp.value = digits === '' ? '' : String(toCount(digits));
+      update(); updateSummary(); saveData();
     });
+    inp.addEventListener('compositionend', () => inp.dispatchEvent(new Event('input')));
     inp.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       e.preventDefault();
@@ -536,13 +616,14 @@ chars.forEach(c => {
       if (next) { next.focus(); next.select(); } else { inp.blur(); }
     });
   });
+  updaters.push(update);
 });
 
 function updateSummary() {
   let totalW = 0, totalL = 0;
   chars.forEach(c => {
-    totalW += parseInt(document.getElementById(`${c.id}-w`).value) || 0;
-    totalL += parseInt(document.getElementById(`${c.id}-l`).value) || 0;
+    totalW += readCount(`${c.id}-w`);
+    totalL += readCount(`${c.id}-l`);
   });
   const totalGames = totalW + totalL;
   document.getElementById('sum-w').textContent = totalW;
@@ -553,10 +634,43 @@ function updateSummary() {
     document.getElementById('sum-bar').style.width = '0%';
   } else {
     const pct = totalW / totalGames * 100;
-    document.getElementById('sum-pct').innerHTML = `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)} <span>%</span>`;
+    document.getElementById('sum-pct').innerHTML = `${formatPct(pct)} <span>%</span>`;
     document.getElementById('sum-bar').style.width = pct + '%';
   }
 }
+
+// ---- 保存データの復元（初回・破損時は 0勝0敗 のまま） ----
+(function restore() {
+  const saved = loadData();
+  if (saved) {
+    chars.forEach(c => {
+      const rec = saved[c.id];
+      if (!rec || typeof rec !== 'object') return;
+      const valid = v => (Number.isInteger(v) && v >= 0 ? Math.min(v, MAX_COUNT) : 0);
+      const w = valid(rec.w);
+      const l = valid(rec.l);
+      document.getElementById(`${c.id}-w`).value = w ? String(w) : '';
+      document.getElementById(`${c.id}-l`).value = l ? String(l) : '';
+    });
+  }
+  updaters.forEach(fn => fn());
+  updateSummary();
+})();
+
+// ---- リセット（確認モーダル付き） ----
+const resetModal = document.getElementById('resetModal');
+document.getElementById('resetBtn').addEventListener('click', () => resetModal.classList.add('open'));
+document.getElementById('resetCancel').addEventListener('click', () => resetModal.classList.remove('open'));
+document.getElementById('resetOk').addEventListener('click', () => {
+  chars.forEach(c => {
+    document.getElementById(`${c.id}-w`).value = '';
+    document.getElementById(`${c.id}-l`).value = '';
+  });
+  updaters.forEach(fn => fn());
+  updateSummary();
+  clearData();
+  resetModal.classList.remove('open');
+});
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
@@ -574,7 +688,7 @@ document.getElementById('exportBtn').addEventListener('click', async function() 
       scale: 2,
       useCORS: true,
       logging: false,
-      ignoreElements: el => el.id === 'imgModal' || el.id === 'exportBtn' || el.classList.contains('export-wrap'),
+      ignoreElements: el => el.id === 'imgModal' || el.id === 'resetModal' || el.id === 'exportBtn' || el.classList.contains('export-wrap'),
     });
 
     document.body.classList.remove('snapping');
