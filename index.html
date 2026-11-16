@@ -130,6 +130,29 @@
     margin-bottom: 18px;
     flex-wrap: wrap;
   }
+  .quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .quick-btn {
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    font: 700 14px 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    touch-action: manipulation;
+    padding: 8px 12px;
+  }
+  .quick-btn.win { color: #92d4a1; border-color: rgba(90,154,106,0.6); background: rgba(90,154,106,0.1); }
+  .quick-btn.loss { color: #e1a1a1; border-color: rgba(187,100,100,0.55); background: rgba(187,100,100,0.1); }
+  .quick-btn.undo { color: var(--text); font-size: 12px; font-weight: 400; }
+  .quick-btn:not(:disabled):active { transform: scale(0.97); }
+  .quick-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .quick-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .input-group {
     display: flex;
     align-items: center;
@@ -428,7 +451,7 @@
   }
 
   /* snapshot overlay — hides inputs, shows static values */
-  body.snapping .inputs { display: none; }
+  body.snapping .inputs, body.snapping .quick-actions { display: none; }
   body.snapping .snap-row { display: flex !important; }
   /* Visible only in downloaded battle-record images. */
   .share-credit {
@@ -573,6 +596,7 @@ const MAX_COUNT = 9999;               // 1キャラ・勝/敗それぞれの上�
 const STORAGE_KEY = 'sts2-winrate:data';
 const STORAGE_VERSION = 1;
 const updaters = [];
+const clearUndoActions = [];
 
 // 全角数字→半角、数字以外を除去、上限で丸める。空欄は0。
 function sanitizeDigits(str) {
@@ -622,6 +646,11 @@ chars.forEach(c => {
   card.innerHTML = `
     <div class="char-name">${c.name}</div>
     <div class="char-subtitle">${c.sub}</div>
+    <div class="quick-actions" aria-label="${c.sub}の記録ボタン">
+      <button type="button" class="quick-btn win" aria-label="${c.sub}に1勝追加">＋1勝</button>
+      <button type="button" class="quick-btn loss" aria-label="${c.sub}に1敗追加">＋1敗</button>
+      <button type="button" class="quick-btn undo" aria-label="${c.sub}の直前の追加を取り消す" title="このキャラクターの直前の＋1操作を戻す" disabled>↶ 戻す</button>
+    </div>
     <div class="inputs">
       <div class="input-group">
         <label>勝</label>
@@ -637,7 +666,7 @@ chars.forEach(c => {
       <span class="snap-val" id="${c.id}-snap-val"></span>
     </div>
     <div class="result-area">
-      <div class="no-data" id="${c.id}-empty">数字を入力してください</div>
+      <div class="no-data" id="${c.id}-empty">まだ記録がありません</div>
       <div id="${c.id}-result" style="display:none">
         <div class="winrate-display">
           <div class="winrate-num" id="${c.id}-pct">—</div>
@@ -654,11 +683,21 @@ chars.forEach(c => {
 
   const wInput = card.querySelector('.wins');
   const lInput = card.querySelector('.losses');
+  const winQuickBtn = card.querySelector('.quick-btn.win');
+  const lossQuickBtn = card.querySelector('.quick-btn.loss');
+  const undoBtn = card.querySelector('.quick-btn.undo');
+  const undoHistory = [];
+
+  function updateUndoButton() {
+    undoBtn.disabled = undoHistory.length === 0;
+  }
 
   function update() {
     const w = toCount(wInput.value);
     const l = toCount(lInput.value);
     const total = w + l;
+    winQuickBtn.disabled = w >= MAX_COUNT;
+    lossQuickBtn.disabled = l >= MAX_COUNT;
     const empty = document.getElementById(`${c.id}-empty`);
     const result = document.getElementById(`${c.id}-result`);
     const pctEl = document.getElementById(`${c.id}-pct`);
@@ -685,13 +724,34 @@ chars.forEach(c => {
     if (snapVal) snapVal.textContent = `${w}勝 ${l}敗 ／ ${total}戦`;
   }
 
+  function addResult(which) {
+    const input = which === 'w' ? wInput : lInput;
+    const count = toCount(input.value);
+    if (count >= MAX_COUNT) return;
+    undoHistory.push({ w: wInput.value, l: lInput.value });
+    if (undoHistory.length > 20) undoHistory.shift();
+    input.value = String(count + 1);
+    update(); updateSummary(); saveData(); updateUndoButton();
+  }
+  winQuickBtn.addEventListener('click', () => addResult('w'));
+  lossQuickBtn.addEventListener('click', () => addResult('l'));
+  undoBtn.addEventListener('click', () => {
+    const previous = undoHistory.pop();
+    if (!previous) return;
+    wInput.value = previous.w;
+    lInput.value = previous.l;
+    update(); updateSummary(); saveData(); updateUndoButton();
+  });
+
   [wInput, lInput].forEach(inp => {
     inp.addEventListener('input', e => {
       // 変換中(IME)は触らない。確定後に数字のみ・上限内へ正規化
       if (e.isComposing) return;
       const digits = sanitizeDigits(inp.value);
       inp.value = digits === '' ? '' : String(toCount(digits));
-      update(); updateSummary(); saveData();
+      // 直接編集後に古い「戻す」を押して、編集内容が消えるのを防ぐ。
+      undoHistory.length = 0;
+      update(); updateSummary(); saveData(); updateUndoButton();
     });
     inp.addEventListener('compositionend', () => inp.dispatchEvent(new Event('input')));
     inp.addEventListener('keydown', e => {
@@ -703,6 +763,7 @@ chars.forEach(c => {
     });
   });
   updaters.push(update);
+  clearUndoActions.push(() => { undoHistory.length = 0; updateUndoButton(); });
 });
 
 function updateSummary() {
@@ -752,6 +813,7 @@ document.getElementById('resetOk').addEventListener('click', () => {
     document.getElementById(`${c.id}-w`).value = '';
     document.getElementById(`${c.id}-l`).value = '';
   });
+  clearUndoActions.forEach(fn => fn());
   updaters.forEach(fn => fn());
   updateSummary();
   clearData();
