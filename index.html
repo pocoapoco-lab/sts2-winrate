@@ -367,6 +367,8 @@
   .install-guide-body ol { margin: 14px 0 18px; padding-left: 24px; }
   .install-guide-body li { margin-bottom: 10px; line-height: 1.7; font-size: 13px; }
   .install-guide-body strong { color: var(--gold-light); }
+  .install-device { margin: 18px 0 4px !important; font-size: 13px !important; }
+  .install-share-icon { display: inline-block; vertical-align: -3px; color: var(--gold-light); flex: none; }
   .install-hint {
     background: rgba(200,168,75,0.07);
     border-left: 3px solid var(--gold);
@@ -512,15 +514,24 @@
 <details class="install-guide" id="install">
   <summary>📱 ホーム画面に追加してアプリ感覚で使う <span>無料・約30秒</span></summary>
   <div class="install-guide-body">
-    <p class="install-hint">Threads・LINEなどから開いた場合は、まずメニューの<strong>「Safariで開く」</strong>を選んでね。「ホーム画面に追加」が見当たらないときもSafariで開き直そう。</p>
+    <p class="install-hint">Threads・LINEなどのアプリ内ブラウザから開いた場合は、まずメニューから<strong>「Safariで開く」</strong>か<strong>「Chromeで開く」</strong>を選んでね。</p>
+    <p class="install-device"><strong>🍎 iPhone（Safari）</strong></p>
     <ol>
-      <li>iPhoneの<strong>Safari</strong>でこの勝率トラッカーを開く。</li>
-      <li>画面下のアドレスバー左側にある<strong>「≡」（横線3本）</strong>をタップ → <strong>「共有」</strong>を選ぶ。<br>※「□↑」の共有ボタンが直接見えている場合は、それをタップ。</li>
-      <li>共有メニューを下にスクロールして<strong>「ホーム画面に追加」</strong>を選ぶ。見当たらない場合は最下部の<strong>「アクションを編集」</strong>から追加。</li>
-      <li><strong>「Webアプリとして開く」</strong>をオンにし、右上の<strong>「追加」</strong>をタップ。これで完了！</li>
+      <li>Safariでこの勝率トラッカーを開く。</li>
+      <li>画面下のアドレスバー左側の<strong>「≡」（横線3本）</strong> → <strong>「共有」</strong>をタップ。<br>※共有マーク <svg class="install-share-icon" viewBox="0 0 24 24" width="18" height="18" role="img" aria-label="共有マーク"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> が直接表示されている場合は、そこをタップ。</li>
+      <li>共有メニューを下にスクロールして<strong>「ホーム画面に追加」</strong>を選ぶ。見当たらない場合は<strong>「アクションを編集」</strong>を確認。</li>
+      <li><strong>「Webアプリとして開く」</strong>をオンにして、<strong>「追加」</strong>をタップ。</li>
     </ol>
-    <p>AndroidならChromeの<strong>「︙」→「ホーム画面に追加」</strong>から追加できるよ。</p>
-    <p class="install-caution">※勝敗の記録は端末内に保存されます。Safari版とホーム画面版で記録が共有されない場合があるため、記録済みの人は追加後に確認してください。</p>
+    <p class="install-device"><strong>🌐 iPhone（Chrome）</strong></p>
+    <ol>
+      <li>Chromeでこの勝率トラッカーを開く。</li>
+      <li>アドレスバー付近の<strong>共有マーク <svg class="install-share-icon" viewBox="0 0 24 24" width="18" height="18" role="img" aria-label="共有マーク"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></strong>をタップ。</li>
+      <li><strong>「表示を増やす」</strong> → <strong>「ホーム画面に追加」</strong>を選ぶ。</li>
+      <li>内容を確認して<strong>「追加」</strong>をタップ。</li>
+    </ol>
+    <p class="install-device"><strong>🤖 Android（Chrome）</strong></p>
+    <p>Chromeの<strong>「︙」</strong>メニューから<strong>「ホーム画面に追加」</strong>または<strong>「アプリをインストール」</strong>を選んでね。</p>
+    <p class="install-caution">※勝敗の記録は端末内に保存されます。ブラウザ版とホーム画面版で記録が共有されない場合があるため、記録済みの人は追加後に確認してください。</p>
   </div>
 </details>
 <div class="share-credit" aria-hidden="true">この戦績カードを作る：<span>pocoapoco-lab.github.io/sts2-winrate/</span></div>
